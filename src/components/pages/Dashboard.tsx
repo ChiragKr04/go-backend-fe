@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAppNavigation } from "../../hooks/useAppNavigation"
+import { useAuth } from "../../hooks/useAuth"
 import { Users, Lock, Plus, User, LogOut } from "lucide-react"
 import JoinRoomModal from "../modals/JoinRoomModal"
 import {
@@ -14,6 +15,7 @@ import {
 
 const Dashboard = () => {
 	const { goToHome } = useAppNavigation()
+	const { user, logout } = useAuth()
 	const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
 
 	const handleCreatePublicRoom = () => {
@@ -46,9 +48,7 @@ const Dashboard = () => {
 	}
 
 	const handleLogout = () => {
-		// TODO: Implement logout functionality
-		console.log("Logging out user...")
-		// For now, redirect to home page
+		logout()
 		goToHome()
 	}
 
@@ -79,15 +79,17 @@ const Dashboard = () => {
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
-										<span className="text-sm font-medium text-white">S</span>
+										<span className="text-sm font-medium text-white">
+											{user?.first_name?.charAt(0)?.toUpperCase() || 'U'}
+										</span>
 									</div>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end" className="w-56">
 									<div className="flex items-center justify-start gap-2 p-2">
 										<div className="flex flex-col space-y-1 leading-none">
-											<p className="font-medium">Sarah Johnson</p>
+											<p className="font-medium">{user?.first_name} {user?.last_name}</p>
 											<p className="text-xs text-muted-foreground">
-												sarah@codehall.com
+												{user?.email}
 											</p>
 										</div>
 									</div>
@@ -113,7 +115,7 @@ const Dashboard = () => {
 				<div className="max-w-4xl mx-auto space-y-12">
 					{/* Welcome Section */}
 					<div className="text-center space-y-2">
-						<h1 className="text-4xl font-bold">Welcome back, Sarah!</h1>
+						<h1 className="text-4xl font-bold">Welcome back, {user?.first_name || 'User'}!</h1>
 					</div>
 
 					{/* Create Room Section */}

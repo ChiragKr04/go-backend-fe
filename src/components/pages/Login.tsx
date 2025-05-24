@@ -4,16 +4,51 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useAppNavigation } from "../../hooks/useAppNavigation"
+import { useAuth } from "../../hooks/useAuth"
+import { useState, useEffect, useRef } from "react"
 
 const Login = () => {
 	const { goToHome, goToDashboard } = useAppNavigation()
+	const { login, isLoading, error, isAuthenticated, clearError } = useAuth()
+	const [email, setEmail] = useState("")
+	const [password, setPassword] = useState("")
+	const clearErrorRef = useRef(clearError)
 
-	const handleLogin = (e: React.FormEvent) => {
+	// Update ref when clearError changes
+	useEffect(() => {
+		clearErrorRef.current = clearError
+	}, [clearError])
+
+	// Redirect to dashboard if already authenticated
+	useEffect(() => {
+		if (isAuthenticated) {
+			goToDashboard()
+		}
+	}, [isAuthenticated, goToDashboard])
+
+	// Clear error when component unmounts
+	useEffect(() => {
+		return () => {
+			clearErrorRef.current()
+		}
+	}, [])
+
+	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault()
-		// TODO: Implement actual login logic
-		console.log("Login attempted...")
-		// For now, just redirect to dashboard
-		goToDashboard()
+
+		if (!email || !password) {
+			return
+		}
+
+		try {
+			const result = await login({ email, password })
+			if (result.type === 'auth/login/fulfilled') {
+				// Login successful, useEffect will handle redirect
+				console.log("Login successful!")
+			}
+		} catch (error) {
+			console.error("Login error:", error)
+		}
 	}
 
 	return (
@@ -87,6 +122,13 @@ const Login = () => {
 									</div>
 								</div>
 
+								{/* Error Display */}
+								{error && (
+									<div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+										{error}
+									</div>
+								)}
+
 								{/* Email and Password Form */}
 								<form className="space-y-4" onSubmit={handleLogin}>
 									<div className="space-y-2">
@@ -95,7 +137,12 @@ const Login = () => {
 											id="email"
 											type="email"
 											placeholder="Enter your email"
+											value={email}
+											onChange={(e) => {
+												setEmail(e.target.value)
+											}}
 											required
+											disabled={isLoading}
 										/>
 									</div>
 									<div className="space-y-2">
@@ -104,7 +151,12 @@ const Login = () => {
 											id="password"
 											type="password"
 											placeholder="Enter your password"
+											value={password}
+											onChange={(e) => {
+												setPassword(e.target.value)
+											}}
 											required
+											disabled={isLoading}
 										/>
 									</div>
 									<div className="flex items-center justify-between">
@@ -125,8 +177,12 @@ const Login = () => {
 											Forgot password?
 										</a>
 									</div>
-									<Button type="submit" className="w-full h-11">
-										Sign in
+									<Button
+										type="submit"
+										className="w-full h-11"
+										disabled={isLoading || !email || !password}
+									>
+										{isLoading ? "Signing in..." : "Sign in"}
 									</Button>
 								</form>
 

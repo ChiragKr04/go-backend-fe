@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import { ROUTES, type RoutePath } from "../routes";
 
 /**
@@ -8,18 +9,24 @@ import { ROUTES, type RoutePath } from "../routes";
 export const useAppNavigation = () => {
   const navigate = useNavigate();
 
-  const navigateTo = (route: RoutePath) => {
-    navigate(route);
-  };
+  const navigateTo = useCallback(
+    (route: RoutePath) => {
+      navigate(route);
+    },
+    [navigate]
+  );
 
-  const goToHome = () => navigate(ROUTES.HOME);
-  const goToLogin = () => navigate(ROUTES.LOGIN);
-  const goToSignup = () => navigate(ROUTES.SIGNUP);
-  const goToDashboard = () => navigate(ROUTES.DASHBOARD);
-  const goToProfile = () => navigate(ROUTES.PROFILE);
+  const goToHome = useCallback(() => navigate(ROUTES.HOME), [navigate]);
+  const goToLogin = useCallback(() => navigate(ROUTES.LOGIN), [navigate]);
+  const goToSignup = useCallback(() => navigate(ROUTES.SIGNUP), [navigate]);
+  const goToDashboard = useCallback(
+    () => navigate(ROUTES.DASHBOARD),
+    [navigate]
+  );
+  const goToProfile = useCallback(() => navigate(ROUTES.PROFILE), [navigate]);
 
-  const goBack = () => navigate(-1);
-  const goForward = () => navigate(1);
+  const goBack = useCallback(() => navigate(-1), [navigate]);
+  const goForward = useCallback(() => navigate(1), [navigate]);
 
   return {
     // Generic navigation
