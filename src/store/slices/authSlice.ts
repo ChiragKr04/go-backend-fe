@@ -7,6 +7,8 @@ import type {
   AuthState,
   LoginRequest,
   LoginResponse,
+  SignupRequest,
+  SignupResponse,
   ApiError,
 } from "../../types/auth";
 import { API_ENDPOINTS } from "../../constants/api";
@@ -45,6 +47,35 @@ export const loginUser = createAsyncThunk<
     // Store token and user data in localStorage
     authStorage.setToken(data.token);
     authStorage.setUserData(data.user);
+
+    return data;
+  } catch (error) {
+    return rejectWithValue({
+      message: error instanceof Error ? error.message : "Network error",
+    });
+  }
+});
+
+// Async thunk for signup
+export const signupUser = createAsyncThunk<
+  SignupResponse,
+  SignupRequest,
+  { rejectValue: ApiError }
+>("auth/signup", async (userData, { rejectWithValue }) => {
+  try {
+    const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return rejectWithValue({
+        message: data.message || "Signup failed",
+        status: response.status,
+      });
+    }
 
     return data;
   } catch (error) {
@@ -116,6 +147,20 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+      })
+      // Signup cases
+      .addCase(signupUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(signupUser.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+        // Don't set user/token for signup, just clear loading state
+      })
+      .addCase(signupUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || "Signup failed";
       })
       // Logout cases
       .addCase(logoutUser.fulfilled, (state) => {

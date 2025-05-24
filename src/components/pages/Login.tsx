@@ -8,7 +8,7 @@ import { useAuth } from "../../hooks/useAuth"
 import { useState, useEffect, useRef } from "react"
 
 const Login = () => {
-	const { goToHome, goToDashboard } = useAppNavigation()
+	const { goToHome, goToDashboard, goToSignup } = useAppNavigation()
 	const { login, isLoading, error, isAuthenticated, clearError } = useAuth()
 	const [email, setEmail] = useState("")
 	const [password, setPassword] = useState("")
@@ -190,7 +190,7 @@ const Login = () => {
 								<p className="text-center text-sm text-muted-foreground">
 									Don't have an account?{" "}
 									<button
-										onClick={goToHome}
+										onClick={goToSignup}
 										className="font-medium text-primary hover:underline bg-transparent border-none cursor-pointer"
 									>
 										Sign up

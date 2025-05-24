@@ -4,9 +4,16 @@ export interface User {
   first_name: string;
   last_name: string;
   createdAt: string;
+  username: string;
 }
 
 export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface SignupRequest {
+  username: string;
   email: string;
   password: string;
 }
@@ -15,6 +22,10 @@ export interface LoginResponse {
   message: string;
   token: string;
   user: User;
+}
+
+export interface SignupResponse {
+  message: string;
 }
 
 export interface AuthState {

@@ -5,6 +5,7 @@ export const API_BASE_URL = "http://localhost:3000/api/v1";
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${API_BASE_URL}/login`,
+    REGISTER: `${API_BASE_URL}/register`,
     LOGOUT: `${API_BASE_URL}/logout`,
     REFRESH: `${API_BASE_URL}/refresh`,
   },

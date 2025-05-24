@@ -3,12 +3,13 @@ import { useCallback } from "react";
 import type { RootState, AppDispatch } from "../store";
 import {
   loginUser,
+  signupUser,
   logoutUser,
   clearError,
   clearAuth,
   setAuthFromStorage,
 } from "../store/slices/authSlice";
-import type { LoginRequest } from "../types/auth";
+import type { LoginRequest, SignupRequest } from "../types/auth";
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -19,6 +20,13 @@ export const useAuth = () => {
   const login = useCallback(
     async (credentials: LoginRequest) => {
       return dispatch(loginUser(credentials));
+    },
+    [dispatch]
+  );
+
+  const signup = useCallback(
+    async (userData: SignupRequest) => {
+      return dispatch(signupUser(userData));
     },
     [dispatch]
   );
@@ -49,6 +57,7 @@ export const useAuth = () => {
 
     // Actions
     login,
+    signup,
     logout,
     clearError: clearAuthError,
     clearAuth: clearAuthState,

@@ -87,7 +87,7 @@ const Dashboard = () => {
 								<DropdownMenuContent align="end" className="w-56">
 									<div className="flex items-center justify-start gap-2 p-2">
 										<div className="flex flex-col space-y-1 leading-none">
-											<p className="font-medium">{user?.first_name} {user?.last_name}</p>
+											<p className="font-medium">{user?.username}</p>
 											<p className="text-xs text-muted-foreground">
 												{user?.email}
 											</p>
@@ -115,7 +115,7 @@ const Dashboard = () => {
 				<div className="max-w-4xl mx-auto space-y-12">
 					{/* Welcome Section */}
 					<div className="text-center space-y-2">
-						<h1 className="text-4xl font-bold">Welcome back, {user?.first_name || 'User'}!</h1>
+						<h1 className="text-4xl font-bold">Welcome back, {user?.username || 'User'}!</h1>
 					</div>
 
 					{/* Create Room Section */}
