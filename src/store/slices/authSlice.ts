@@ -15,6 +15,7 @@ import type {
 import { API_ENDPOINTS } from "../../constants/api";
 import { authStorage } from "../../utils/storage";
 import { debugAuth } from "../../utils/authDebug";
+import { logger } from "../../utils/logger";
 
 // Track verifyToken calls
 let verifyTokenCallCount = 0;
@@ -113,7 +114,7 @@ export const verifyToken = createAsyncThunk<
 >("auth/verifyToken", async (_, { rejectWithValue }) => {
   try {
     verifyTokenCallCount++;
-    console.log(
+    logger.info(
       `🔐 verifyToken called #${verifyTokenCallCount} at:`,
       new Date().toISOString()
     );
@@ -122,20 +123,20 @@ export const verifyToken = createAsyncThunk<
     const token = authStorage.getToken();
     const userData = authStorage.getUserData();
 
-    console.log("🔍 Raw userData from storage:", userData);
+    logger.info("🔍 Raw userData from storage:", userData);
 
     // Handle case where userData might be the entire login response
     let actualUser = userData;
     if (userData && userData.user && userData.message) {
       // userData contains the entire login response, extract the user
-      console.log("⚠️ userData contains full response, extracting user object");
+      logger.info("⚠️ userData contains full response, extracting user object");
       actualUser = userData.user;
     }
 
-    console.log("🔍 Actual user object:", actualUser);
+    logger.info("🔍 Actual user object:", actualUser);
 
     if (!token || !actualUser?.id) {
-      console.log("❌ No token or user data found", {
+      logger.info("❌ No token or user data found", {
         hasToken: !!token,
         hasUserData: !!userData,
         hasActualUser: !!actualUser,
@@ -148,7 +149,7 @@ export const verifyToken = createAsyncThunk<
     }
 
     const endpoint = API_ENDPOINTS.USER.GET_PROFILE(actualUser.id.toString());
-    console.log("📡 Making API call to:", endpoint);
+    logger.info("📡 Making API call to:", endpoint);
     debugAuth.logApiCall("GET_PROFILE", endpoint);
 
     const response = await fetch(endpoint, {
@@ -158,7 +159,7 @@ export const verifyToken = createAsyncThunk<
       },
     });
 
-    console.log("📡 API Response status:", response.status);
+    logger.info("📡 API Response status:", response.status);
 
     if (!response.ok) {
       debugAuth.logApiCall("GET_PROFILE", endpoint, false);
@@ -166,22 +167,22 @@ export const verifyToken = createAsyncThunk<
       let responseText = "";
       try {
         responseText = await response.text();
-        console.log("📡 API Response body:", responseText);
+        logger.info("📡 API Response body:", responseText);
       } catch (e) {
-        console.log("📡 Could not read response body");
+        logger.info("📡 Could not read response body");
       }
 
       // Only clear auth data for authentication-related errors (401, 403)
       // For other errors (500, network issues), keep the cached data
       if (response.status === 401 || response.status === 403) {
-        console.log("🚫 Token invalid, clearing auth data");
+        logger.info("🚫 Token invalid, clearing auth data");
         authStorage.clearAuthData();
         return rejectWithValue({
           message: "Token expired or invalid",
           status: response.status,
         });
       } else {
-        console.log(
+        logger.info(
           "⚠️ API error but keeping auth data, status:",
           response.status
         );
@@ -194,7 +195,7 @@ export const verifyToken = createAsyncThunk<
     }
 
     const data = await response.json();
-    console.log("✅ Token verification API response:", {
+    logger.info("✅ Token verification API response:", {
       fullResponse: data,
       dataType: typeof data,
       dataKeys: Object.keys(data),
@@ -214,23 +215,23 @@ export const verifyToken = createAsyncThunk<
     // Determine what to store - if response has user field, use that, otherwise use the response directly
     let userToStore = data;
     if (data.user) {
-      console.log("📦 API response contains user object, extracting it");
+      logger.info("📦 API response contains user object, extracting it");
       userToStore = data.user;
     } else if (data.id) {
-      console.log("📦 API response is the user object directly");
+      logger.info("📦 API response is the user object directly");
       userToStore = data;
     } else {
-      console.log("⚠️ API response has unexpected structure");
+      logger.info("⚠️ API response has unexpected structure");
     }
 
-    console.log("💾 Storing user data:", userToStore);
+    logger.info("💾 Storing user data:", userToStore);
 
     // Update stored user data with fresh data from API
     authStorage.setUserData(userToStore);
 
     return { user: userToStore };
   } catch (error) {
-    console.log("💥 Token verification network error:", error);
+    logger.info("💥 Token verification network error:", error);
     debugAuth.logApiCall("GET_PROFILE", "unknown", false);
 
     // For network errors, don't clear auth data - user can continue with cached data
@@ -263,7 +264,7 @@ const authSlice = createSlice({
       const token = authStorage.getToken();
       const userData = authStorage.getUserData();
 
-      console.log("🔄 setAuthFromStorage called:", {
+      logger.info("🔄 setAuthFromStorage called:", {
         hasToken: !!token,
         hasUser: !!userData,
         userData: userData,
@@ -275,7 +276,7 @@ const authSlice = createSlice({
         // Clean up userData if it's in the wrong format
         let cleanUser = userData;
         if (userData.user && userData.message) {
-          console.log("🧹 Cleaning up bad data format in localStorage");
+          logger.info("🧹 Cleaning up bad data format in localStorage");
           cleanUser = userData.user;
           // Store the cleaned data
           authStorage.setUserData(cleanUser);
@@ -297,7 +298,7 @@ const authSlice = createSlice({
       .addCase(
         loginUser.fulfilled,
         (state, action: PayloadAction<LoginResponse>) => {
-          console.log("🔄 Login successful, storing user data:", {
+          logger.info("🔄 Login successful, storing user data:", {
             fullResponse: action.payload,
             userObject: action.payload.user,
             token: action.payload.token,

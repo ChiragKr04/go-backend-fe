@@ -11,4 +11,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Remove console.log in production
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        // Remove console.log, console.info, console.debug in production
+        drop_console: ["log", "info", "debug"],
+        // Keep console.error and console.warn
+        pure_funcs: ["console.log", "console.info", "console.debug"],
+      },
+    },
+  },
 });
