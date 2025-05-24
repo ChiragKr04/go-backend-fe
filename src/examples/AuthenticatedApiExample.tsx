@@ -1,7 +1,6 @@
 // Example component showing how to use auth state and make authenticated API calls
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../utils/api';
-import { API_ENDPOINTS } from '../constants/api';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 

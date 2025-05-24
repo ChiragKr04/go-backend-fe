@@ -9,6 +9,9 @@ export const API_ENDPOINTS = {
     LOGOUT: `${API_BASE_URL}/logout`,
     REFRESH: `${API_BASE_URL}/refresh`,
   },
+  USER: {
+    GET_PROFILE: (userId: string) => `${API_BASE_URL}/get-profile/${userId}`,
+  },
   // Add more API endpoints here as needed
 } as const;
 

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAppNavigation } from "../../hooks/useAppNavigation"
@@ -15,8 +15,20 @@ import {
 
 const Dashboard = () => {
 	const { goToHome } = useAppNavigation()
-	const { user, logout } = useAuth()
+	const { user, logout, isAuthenticated, isLoading } = useAuth()
 	const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+
+	// Debug logging
+	useEffect(() => {
+		console.log('Dashboard - Auth State:', {
+			user,
+			isAuthenticated,
+			isLoading,
+			userUsername: user?.username,
+			userFirstName: user?.first_name,
+			userEmail: user?.email
+		});
+	}, [user, isAuthenticated, isLoading]);
 
 	const handleCreatePublicRoom = () => {
 		// TODO: Implement create public room functionality
@@ -80,7 +92,7 @@ const Dashboard = () => {
 								<DropdownMenuTrigger asChild>
 									<div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all">
 										<span className="text-sm font-medium text-white">
-											{user?.first_name?.charAt(0)?.toUpperCase() || 'U'}
+											{user?.username?.charAt(0)?.toUpperCase() || 'U'}
 										</span>
 									</div>
 								</DropdownMenuTrigger>

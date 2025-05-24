@@ -5,6 +5,7 @@ import {
   loginUser,
   signupUser,
   logoutUser,
+  verifyToken,
   clearError,
   clearAuth,
   setAuthFromStorage,
@@ -35,6 +36,10 @@ export const useAuth = () => {
     return dispatch(logoutUser());
   }, [dispatch]);
 
+  const verifyTokenAndGetProfile = useCallback(async () => {
+    return dispatch(verifyToken());
+  }, [dispatch]);
+
   const clearAuthError = useCallback(() => {
     dispatch(clearError());
   }, [dispatch]);
@@ -59,6 +64,7 @@ export const useAuth = () => {
     login,
     signup,
     logout,
+    verifyToken: verifyTokenAndGetProfile,
     clearError: clearAuthError,
     clearAuth: clearAuthState,
     initializeAuth: initializeAuthFromStorage,
