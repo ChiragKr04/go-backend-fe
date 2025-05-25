@@ -4,6 +4,7 @@ import Landing from "./components/pages/Landing"
 import Login from "./components/pages/Login"
 import Signup from "./components/pages/Signup"
 import Dashboard from "./components/pages/Dashboard"
+import Room from "./components/pages/Room"
 import AuthProvider from "./components/AuthProvider"
 import ProtectedRoute from "./components/ProtectedRoute"
 import { ROUTES } from './routes'
@@ -31,6 +32,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.ROOM}
+            element={
+              <ProtectedRoute>
+                <Room />
               </ProtectedRoute>
             }
           />

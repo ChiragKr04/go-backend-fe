@@ -12,6 +12,11 @@ export const API_ENDPOINTS = {
   USER: {
     GET_PROFILE: (userId: string) => `${API_BASE_URL}/get-profile/${userId}`,
   },
+  ROOM: {
+    CREATE_ROOM: `${API_BASE_URL}/create-room`,
+    GET_ROOM_BY_ID: (roomId: string) =>
+      `${API_BASE_URL}/get-room-by-roomid/${roomId}`,
+  },
   // Add more API endpoints here as needed
 } as const;
 

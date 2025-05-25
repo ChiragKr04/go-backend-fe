@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAppNavigation } from "../../hooks/useAppNavigation"
 import { useAuth } from "../../hooks/useAuth"
 import { Users, Lock, Plus, User, LogOut } from "lucide-react"
 import JoinRoomModal from "../modals/JoinRoomModal"
+import CreateRoomModal from "../modals/CreateRoomModal"
+import { roomService } from "../../services/roomService"
+import { logger } from "../../utils/logger"
+import type { CreateRoomRequest } from "../../types/room"
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -16,11 +21,15 @@ import {
 const Dashboard = () => {
 	const { goToHome } = useAppNavigation()
 	const { user, logout, isAuthenticated, isLoading } = useAuth()
+	const navigate = useNavigate()
 	const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+	const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false)
+	const [isCreatingRoom, setIsCreatingRoom] = useState(false)
+	const [isJoiningRoom, setIsJoiningRoom] = useState(false)
 
 	// Debug logging
 	useEffect(() => {
-		console.log('Dashboard - Auth State:', {
+		logger.info('Dashboard - Auth State:', {
 			user,
 			isAuthenticated,
 			isLoading,
@@ -31,8 +40,36 @@ const Dashboard = () => {
 	}, [user, isAuthenticated, isLoading]);
 
 	const handleCreatePublicRoom = () => {
-		// TODO: Implement create public room functionality
-		console.log("Creating public room...")
+		setIsCreateRoomModalOpen(true)
+	}
+
+	const handleCreateRoomSubmit = async (roomData: CreateRoomRequest) => {
+		try {
+			setIsCreatingRoom(true)
+			logger.info("Creating public room with data:", roomData)
+
+			const newRoom = await roomService.createRoom(roomData)
+			logger.info("Room created successfully:", newRoom)
+
+			// Close the modal
+			setIsCreateRoomModalOpen(false)
+
+			// Navigate to the room page with room data
+			navigate(`/room/${newRoom.room_id}`, {
+				state: { room: newRoom },
+				replace: false
+			})
+		} catch (error) {
+			logger.error("Failed to create room:", error)
+			// TODO: Show error toast/notification
+			alert(`Failed to create room: ${error instanceof Error ? error.message : 'Unknown error'}`)
+		} finally {
+			setIsCreatingRoom(false)
+		}
+	}
+
+	const handleCloseCreateRoomModal = () => {
+		setIsCreateRoomModalOpen(false)
 	}
 
 	const handleCreatePrivateRoom = () => {
@@ -44,10 +81,29 @@ const Dashboard = () => {
 		setIsJoinModalOpen(true)
 	}
 
-	const handleJoinRoomSubmit = (roomCode: string, roomType: 'public' | 'private') => {
-		// TODO: Implement actual join room logic
-		console.log(`Joining ${roomType} room with code: ${roomCode}`)
-		// Here you would typically make an API call to join the room
+	const handleJoinRoomSubmit = async (roomCode: string) => {
+		try {
+			setIsJoiningRoom(true)
+			logger.info("Joining room with code:", roomCode)
+
+			const room = await roomService.getRoomById(roomCode)
+			logger.info("Room found successfully:", room)
+
+			// Close the modal
+			setIsJoinModalOpen(false)
+
+			// Navigate to the room page with room data
+			navigate(`/room/${room.room_id}`, {
+				state: { room: room },
+				replace: false
+			})
+		} catch (error) {
+			logger.error("Failed to join room:", error)
+			// TODO: Show error toast/notification
+			alert(`Failed to join room: ${error instanceof Error ? error.message : 'Unknown error'}`)
+		} finally {
+			setIsJoiningRoom(false)
+		}
 	}
 
 	const handleCloseJoinModal = () => {
@@ -242,6 +298,15 @@ const Dashboard = () => {
 				isOpen={isJoinModalOpen}
 				onClose={handleCloseJoinModal}
 				onJoin={handleJoinRoomSubmit}
+				isLoading={isJoiningRoom}
+			/>
+
+			{/* Create Room Modal */}
+			<CreateRoomModal
+				isOpen={isCreateRoomModalOpen}
+				onClose={handleCloseCreateRoomModal}
+				onCreateRoom={handleCreateRoomSubmit}
+				isLoading={isCreatingRoom}
 			/>
 		</div>
 	)

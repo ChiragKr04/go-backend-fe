@@ -5,6 +5,7 @@ export const ROUTES = {
   SIGNUP: "/signup", // For future use
   DASHBOARD: "/dashboard",
   PROFILE: "/profile", // For future use
+  ROOM: "/room/:roomId", // Room page
 } as const;
 
 // Route configurations with metadata (for future enhancements)
@@ -32,6 +33,11 @@ export const ROUTE_CONFIG = {
   [ROUTES.PROFILE]: {
     title: "Profile - CodeHall",
     description: "Manage your profile",
+    requiresAuth: true,
+  },
+  [ROUTES.ROOM]: {
+    title: "Room - CodeHall",
+    description: "Collaborative coding room",
     requiresAuth: true,
   },
 } as const;
