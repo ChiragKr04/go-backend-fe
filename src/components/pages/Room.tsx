@@ -10,6 +10,11 @@ import { Badge } from "../ui/badge";
 import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
 
+const enum CopyFeedbackType {
+  Button1 = "Button1",
+  Button2 = "Button2",
+}
+
 const RoomPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,6 +23,8 @@ const RoomPage = () => {
   const [room, setRoom] = useState<Room | null>(null);
   const [_, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [copyFeedback2, setCopyFeedback2] = useState<string | null>(null);
 
   // Debug component mount
   useEffect(() => {
@@ -80,6 +87,45 @@ const RoomPage = () => {
     return new Date(dateString).toLocaleString();
   };
 
+  const copyRoomCode = async (copyFeedbackType: CopyFeedbackType) => {
+    if (!room?.short_room_id) return;
+
+    try {
+      await navigator.clipboard.writeText(room.short_room_id);
+      if (copyFeedbackType === CopyFeedbackType.Button1) {
+        setCopyFeedback("Copied!");
+      } else {
+        setCopyFeedback2("Copied!");
+      }
+      logger.info("Room code copied to clipboard:", room.short_room_id);
+
+      // Clear feedback after 2 seconds
+      setTimeout(() => {
+        if (copyFeedbackType === CopyFeedbackType.Button1) {
+          setCopyFeedback(null);
+        } else {
+          setCopyFeedback2(null);
+        }
+      }, 2000);
+    } catch (error) {
+      logger.error("Failed to copy to clipboard:", error);
+      if (copyFeedbackType === CopyFeedbackType.Button1) {
+        setCopyFeedback("Copy failed");
+      } else {
+        setCopyFeedback2("Copy failed");
+      }
+
+      // Clear feedback after 2 seconds
+      setTimeout(() => {
+        if (copyFeedbackType === CopyFeedbackType.Button1) {
+          setCopyFeedback(null);
+        } else {
+          setCopyFeedback2(null);
+        }
+      }, 2000);
+    }
+  };
+
   const handleBackToDashboard = () => {
     navigate("/dashboard");
   };
@@ -137,9 +183,19 @@ const RoomPage = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 cursor-pointer hover:bg-secondary/80 transition-colors relative"
+                onClick={() => copyRoomCode(CopyFeedbackType.Button1)}
+                title="Click to copy room code"
+              >
                 <Hash className="w-3 h-3" />
                 {room?.short_room_id}
+                {copyFeedback && (
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                    {copyFeedback}
+                  </span>
+                )}
               </Badge>
               <Badge variant={room?.is_private ? "destructive" : "default"}>
                 {room?.is_private ? "Private" : "Public"}
@@ -210,9 +266,14 @@ const RoomPage = () => {
                   <Users className="w-4 h-4" />
                   Invite Others
                 </Button>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2 relative" onClick={() => copyRoomCode(CopyFeedbackType.Button2)}>
                   <Hash className="w-4 h-4" />
                   Copy Room ID
+                  {copyFeedback2 && (
+                    <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                      {copyFeedback2}
+                    </span>
+                  )}
                 </Button>
                 <Button variant="outline">
                   Room Settings
