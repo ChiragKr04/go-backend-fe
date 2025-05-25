@@ -9,6 +9,7 @@ import type { Room } from "../../types/room";
 import { Badge } from "../ui/badge";
 import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
+import { ROUTES } from "@/routes";
 
 const enum CopyFeedbackType {
   Button1 = "Button1",
@@ -127,7 +128,7 @@ const RoomPage = () => {
   };
 
   const handleBackToDashboard = () => {
-    navigate("/dashboard");
+    navigate(ROUTES.DASHBOARD);
   };
 
   if (error) {
