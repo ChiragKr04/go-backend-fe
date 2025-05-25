@@ -10,6 +10,8 @@ import { Badge } from "../ui/badge";
 import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
 import { ROUTES } from "@/routes";
+import { Chat } from "../chat";
+import { WebSocketDebugger } from "../chat/WebSocketDebugger";
 
 const enum CopyFeedbackType {
   Button1 = "Button1",
@@ -283,26 +285,11 @@ const RoomPage = () => {
             </CardContent>
           </Card>
 
-          {/* Placeholder for future room content */}
-          <Card className="w-full">
-            <CardContent className="py-12">
-              <div className="text-center space-y-4">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto">
-                  <Users className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">Welcome to {room?.room_name}!</h3>
-                  <p className="text-muted-foreground max-w-md mx-auto">
-                    This is where the collaborative coding magic will happen.
-                    Room features and code editor will be implemented here.
-                  </p>
-                </div>
-                <Button size="lg" className="mt-4">
-                  Start Coding
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Debug WebSocket Connection */}
+          <WebSocketDebugger roomId={params.roomId!} />
+
+          {/* Chat Component */}
+          <Chat roomId={params.roomId!} className="w-full" />
         </div>
       </main>
     </div>
