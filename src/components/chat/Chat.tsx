@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageCircle, Users, Wifi, WifiOff } from 'lucide-react';
-import { useSocketConnection } from './useSocketConnection';
+// import { useSocketConnection } from './useSocketConnection';
 import { useWebSocketConnection } from './useWebSocketConnection';
 import { useChatMessages } from './useChatMessages';
 import { ScrollArea } from '../ui/scroll-area';
@@ -25,12 +25,18 @@ export const Chat: React.FC<ChatProps> = ({
   const [onlineUsers, setOnlineUsers] = useState<number>(0);
 
   // Choose connection type based on prop
-  const socketIOConnection = useSocketConnection(roomId, token);
+  // const socketIOConnection = useSocketConnection(roomId, token);
   const webSocketConnection = useWebSocketConnection(roomId, token);
 
   // Use the appropriate connection
-  const socket = useNativeWebSocket ? webSocketConnection : socketIOConnection;
-  const { messages, sendMessage, isConnected } = useChatMessages(socket, user);
+  const socket = webSocketConnection;
+  const { messages, sendMessage, isConnected, loadMessageHistory } = useChatMessages(socket, user);
+
+  useEffect(() => {
+    if (socket) {
+      loadMessageHistory(roomId);
+    }
+  }, [socket, roomId]);
 
   // Handle real-time events
   useEffect(() => {

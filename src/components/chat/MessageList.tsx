@@ -11,7 +11,7 @@ interface MessageListProps {
 }
 
 interface MessageItemProps {
-  message: ChatMessage;
+  message: ChatMessage & { createdAt?: string };
   isCurrentUser: boolean;
   showAvatar?: boolean;
 }
@@ -45,7 +45,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     return (
       <div className="flex justify-center my-2">
         <div className={getMessageStyles()}>
-          {message.content}
+          {message.chat}
         </div>
       </div>
     );
@@ -67,12 +67,12 @@ const MessageItem: React.FC<MessageItemProps> = ({
             {isCurrentUser ? 'You' : message.username}
           </span>
           <span className="text-xs text-muted-foreground">
-            {formatMessageTime(message.timestamp)}
+            {formatMessageTime(message.timestamp || message['createdAt'] || '')}
           </span>
         </div>
 
         <div className={`p-3 break-words shadow-sm ${getMessageStyles()}`}>
-          <p className="text-sm leading-relaxed">{message.content}</p>
+          <p className="text-sm leading-relaxed">{message.chat}</p>
         </div>
       </div>
     </div>
@@ -133,7 +133,7 @@ export const MessageList: React.FC<MessageListProps> = ({
           currentUserId: currentUserId,
           isCurrentUser: isCurrentUser,
           username: message.username,
-          content: message.content.substring(0, 20) + '...'
+          content: message.chat.substring(0, 20) + '...'
         });
 
         return (

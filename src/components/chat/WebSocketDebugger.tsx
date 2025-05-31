@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useWebSocketConnection } from './useWebSocketConnection';
 import { useAuth } from '@/hooks/useAuth';
 import { Wifi, WifiOff, Send, Bug } from 'lucide-react';
+import { WS_BASE_URL } from '@/constants/api';
 
 interface WebSocketDebuggerProps {
   roomId: string;
@@ -99,7 +100,7 @@ export const WebSocketDebugger: React.FC<WebSocketDebuggerProps> = ({ roomId }) 
         <div className="text-sm space-y-1">
           <p><strong>Room ID:</strong> {roomId}</p>
           <p><strong>Token:</strong> {token ? '***' + token.slice(-8) : 'None'}</p>
-          <p><strong>WebSocket URL:</strong> ws://localhost:3000/api/v1/ws/{roomId}?token=...</p>
+          <p><strong>WebSocket URL:</strong> {WS_BASE_URL}/{roomId}?token=...</p>
         </div>
 
         {/* Test Message */}

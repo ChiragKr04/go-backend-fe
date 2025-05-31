@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { logger } from "@/utils/logger";
+import { WS_BASE_URL } from "@/constants/api";
 
 // Create a Socket.IO-like interface for native WebSocket
 interface WebSocketEvents {
@@ -118,7 +119,7 @@ class SocketLikeWebSocket {
             }
 
             // Format 2: Direct message object (common format)
-            if (data.id && data.content && data.userId !== undefined) {
+            if (data.id && data.chat && data.userId !== undefined) {
               logger.info("📋 Handling direct message object");
               this.emit("message_received", data);
               continue;
@@ -158,7 +159,7 @@ class SocketLikeWebSocket {
             this.emit("message", data);
 
             // Also try to emit as message_received if it looks like a chat message
-            if (data.content || data.message) {
+            if (data.chat || data.message) {
               logger.info("📋 Also emitting as message_received (fallback)");
               this.emit("message_received", data);
             }
@@ -266,9 +267,7 @@ export const useWebSocketConnection = (
     }
 
     // Create WebSocket connection with your backend URL pattern
-    const wsUrl = `ws://localhost:3000/api/v1/ws/${roomId}?token=${encodeURIComponent(
-      token
-    )}`;
+    const wsUrl = `${WS_BASE_URL}/${roomId}?token=${encodeURIComponent(token)}`;
     logger.info("Connecting to WebSocket:", wsUrl);
 
     const newSocket = new SocketLikeWebSocket(wsUrl);

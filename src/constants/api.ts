@@ -1,5 +1,6 @@
 // API Base URL
 export const API_BASE_URL = "http://localhost:3000/api/v1";
+export const WS_BASE_URL = "ws://localhost:3000/api/v1/ws";
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -16,6 +17,8 @@ export const API_ENDPOINTS = {
     CREATE_ROOM: `${API_BASE_URL}/create-room`,
     GET_ROOM_BY_ID: (roomId: string) =>
       `${API_BASE_URL}/get-room-by-roomid/${roomId}`,
+    GET_CHAT_HISTORY: (roomId: string) =>
+      `${API_BASE_URL}/chat/history/${roomId}`,
   },
   // Add more API endpoints here as needed
 } as const;

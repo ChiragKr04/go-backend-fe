@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Socket } from "socket.io-client";
 import type { ChatMessage } from "./types";
 import { logger } from "@/utils/logger";
+import { roomService } from "@/services/roomService";
 
 interface User {
   id: number;
@@ -17,7 +17,7 @@ interface GenericSocket {
 }
 
 export const useChatMessages = (
-  socket: Socket | GenericSocket | null,
+  socket: GenericSocket | null,
   user: User | null
 ) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,7 +45,7 @@ export const useChatMessages = (
       logger.info("Chat: Current logged-in user:", user);
 
       // Check if this is a payload from a send_message type (has content but no proper message id)
-      if (message.content && !message.id) {
+      if (message.chat && !message.id) {
         logger.info("Chat: Processing send_message payload format");
         logger.info(
           "Chat: Full payload received:",
@@ -64,7 +64,7 @@ export const useChatMessages = (
 
         const chatMessage: ChatMessage = {
           id: `msg-${Date.now()}-${Math.random()}`,
-          content: message.content,
+          chat: message.chat,
           // Use the sender info from backend if available, otherwise fall back to current user
           userId:
             message.senderId ||
@@ -103,7 +103,7 @@ export const useChatMessages = (
       }
 
       // Validate and convert to ChatMessage structure for other formats
-      if (!message.id || !message.content || message.userId === undefined) {
+      if (!message.id || !message.chat || message.userId === undefined) {
         logger.warn(
           "Chat: Invalid message structure, attempting to fix:",
           message
@@ -112,7 +112,7 @@ export const useChatMessages = (
         // Try to fix the message structure
         const fixedMessage: ChatMessage = {
           id: message.id || `msg-${Date.now()}`,
-          content: message.content || message.message || String(message),
+          chat: message.chat || message.message || String(message),
           userId: message.userId || 0,
           username: message.username || "Unknown User",
           timestamp: message.timestamp || new Date().toISOString(),
@@ -137,20 +137,17 @@ export const useChatMessages = (
     };
 
     // Handle message history (when joining room)
-    const handleMessageHistory = (messageHistory: ChatMessage[]) => {
-      logger.info(
-        "Chat: Message history received:",
-        messageHistory.length,
-        "messages"
-      );
-      setMessages(messageHistory);
+    const handleMessageHistory = async (roomId: string) => {
+      const history = await roomService.getChatHistory(roomId);
+      logger.info("Chat: Message history received:", history);
+      setMessages(history);
     };
 
     // Handle system messages
-    const handleSystemMessage = (data: { content: string; type?: string }) => {
+    const handleSystemMessage = (data: { chat: string; type?: string }) => {
       const systemMessage: ChatMessage = {
         id: `system-${Date.now()}`,
-        content: data.content,
+        chat: data.chat,
         userId: 0,
         username: "System",
         timestamp: new Date().toISOString(),
@@ -187,7 +184,7 @@ export const useChatMessages = (
       }
 
       const messageData = {
-        content: content.trim(),
+        chat: content.trim(),
         timestamp: new Date().toISOString(),
         userId: user.id,
         username: user.username,
@@ -203,10 +200,22 @@ export const useChatMessages = (
     setMessages([]);
   }, []);
 
+  const loadMessageHistory = useCallback(async (roomId: string) => {
+    try {
+      logger.info("Chat: Loading message history for room:", roomId);
+      const history = await roomService.getChatHistory(roomId);
+      logger.info("Chat: Message history loaded:", history);
+      setMessages(history || []);
+    } catch (error) {
+      logger.error("Chat: Failed to load message history:", error);
+    }
+  }, []);
+
   return {
     messages,
     isConnected,
     sendMessage,
     clearMessages,
+    loadMessageHistory,
   };
 };

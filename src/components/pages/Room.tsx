@@ -11,7 +11,7 @@ import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
 import { ROUTES } from "@/routes";
 import { Chat } from "../chat";
-import { WebSocketDebugger } from "../chat/WebSocketDebugger";
+// import { WebSocketDebugger } from "../chat/WebSocketDebugger";
 
 const enum CopyFeedbackType {
   Button1 = "Button1",
@@ -286,7 +286,7 @@ const RoomPage = () => {
           </Card>
 
           {/* Debug WebSocket Connection */}
-          <WebSocketDebugger roomId={params.roomId!} />
+          {/* <WebSocketDebugger roomId={params.roomId!} /> */}
 
           {/* Chat Component */}
           <Chat roomId={params.roomId!} className="w-full" />
