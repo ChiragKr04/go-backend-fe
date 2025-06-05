@@ -5,7 +5,7 @@ import { SocketEvents } from "@/utils/socket";
 
 // Create a Socket.IO-like interface for native WebSocket
 interface WebSocketEvents {
-  [key: string]: (...args: any[]) => void;
+  [key: string]: ((...args: any[]) => void)[];
 }
 
 class SocketLikeWebSocket {
@@ -36,7 +36,6 @@ class SocketLikeWebSocket {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      logger.info("✅ WebSocket connected successfully");
       this.reconnectAttempts = 0;
       this.emit(SocketEvents.Connect);
     };
@@ -210,8 +209,8 @@ class SocketLikeWebSocket {
     ]);
 
     // Always trigger local event handlers first
-    if (this.events[eventName]) {
-      this.events[eventName](...args);
+    if (this.events[eventName] && this.events[eventName].length > 0) {
+      this.events[eventName].forEach((callback) => callback(...args));
     }
 
     // Only send certain events to server (outgoing events)
@@ -228,7 +227,6 @@ class SocketLikeWebSocket {
           timestamp: new Date().toISOString(),
         };
         this.ws.send(JSON.stringify(message));
-        logger.info("📤 Sent message to server:", message);
       } else {
         logger.warn("Cannot send message - WebSocket not connected");
       }
@@ -239,11 +237,25 @@ class SocketLikeWebSocket {
   }
 
   on(eventName: string, callback: (...args: any[]) => void) {
-    this.events[eventName] = callback;
+    if (!this.events[eventName]) {
+      this.events[eventName] = [];
+    }
+    this.events[eventName].push(callback);
   }
 
-  off(eventName: string) {
-    delete this.events[eventName];
+  off(eventName: string, callback?: (...args: any[]) => void) {
+    if (!this.events[eventName]) return;
+
+    if (callback) {
+      // Remove specific callback
+      const index = this.events[eventName].indexOf(callback);
+      if (index > -1) {
+        this.events[eventName].splice(index, 1);
+      }
+    } else {
+      // Remove all callbacks for this event
+      delete this.events[eventName];
+    }
   }
 
   disconnect() {
@@ -291,22 +303,38 @@ export const useWebSocketConnection = (
     const newSocket = new SocketLikeWebSocket(wsUrl);
 
     // Handle authentication and room joining after connection
+    logger.info("🔧 Registering Connect event handler...");
     newSocket.on(SocketEvents.Connect, () => {
       logger.info(
-        "✅ WebSocket connected, sending authentication and joining room"
+        "✅ Connect event handler triggered! WebSocket connected, sending authentication and joining room"
       );
+      logger.info("🔍 Token:", token ? "Present" : "Missing");
+      logger.info("🔍 RoomId:", roomId);
 
       // Send authentication message
+      logger.info("📤 About to send Authenticate event...");
       newSocket.emit(SocketEvents.Authenticate, {
-        token: token,
-        roomId: roomId,
+        data: {
+          token: token,
+          roomId: roomId,
+        },
       });
 
       // Join the room
-      newSocket.emit(SocketEvents.JoinRoom, { roomId });
+      logger.info("📤 About to send JoinRoom event...");
+      newSocket.emit(SocketEvents.JoinRoom, {
+        data: {
+          roomId: roomId,
+        },
+      });
+      logger.info("✅ Both events sent successfully!");
     });
 
+    logger.info("🔧 About to call newSocket.connect()...");
     newSocket.connect();
+    logger.info(
+      "🔧 newSocket.connect() called, connection should be starting..."
+    );
 
     // Store the socket
     socketRef.current = newSocket;
