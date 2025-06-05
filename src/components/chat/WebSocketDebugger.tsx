@@ -6,6 +6,7 @@ import { useWebSocketConnection } from './useWebSocketConnection';
 import { useAuth } from '@/hooks/useAuth';
 import { Wifi, WifiOff, Send, Bug } from 'lucide-react';
 import { WS_BASE_URL } from '@/constants/api';
+import { SocketEvents } from '@/utils/socket';
 
 interface WebSocketDebuggerProps {
   roomId: string;
@@ -24,54 +25,54 @@ export const WebSocketDebugger: React.FC<WebSocketDebuggerProps> = ({ roomId }) 
       setConnectionLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
     };
 
-    socket.on('connect', () => {
+    socket.on(SocketEvents.Connect, () => {
       addLog('✅ Connected to WebSocket server');
     });
 
-    socket.on('disconnect', (reason) => {
+    socket.on(SocketEvents.Disconnect, (reason) => {
       addLog(`❌ Disconnected: ${reason}`);
     });
 
-    socket.on('connect_error', (error) => {
+    socket.on(SocketEvents.ConnectError, (error) => {
       addLog(`🚫 Connection error: ${error}`);
     });
 
-    socket.on('message_received', (data) => {
+    socket.on(SocketEvents.MessageReceived, (data) => {
       addLog(`📨 Message received: ${JSON.stringify(data)}`);
     });
 
-    socket.on('user_joined', (data) => {
+    socket.on(SocketEvents.UserJoined, (data) => {
       addLog(`👤 User joined: ${JSON.stringify(data)}`);
     });
 
-    socket.on('user_left', (data) => {
+    socket.on(SocketEvents.UserLeft, (data) => {
       addLog(`👤 User left: ${JSON.stringify(data)}`);
     });
 
-    socket.on('user_count', (count) => {
+    socket.on(SocketEvents.UserCount, (count) => {
       addLog(`👥 User count: ${count}`);
     });
 
     // Generic message handler
-    socket.on('message', (data) => {
+    socket.on(SocketEvents.Message, (data) => {
       addLog(`📧 Generic message: ${JSON.stringify(data)}`);
     });
 
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off('message_received');
-      socket.off('user_joined');
-      socket.off('user_left');
-      socket.off('user_count');
-      socket.off('message');
+      socket.off(SocketEvents.Connect);
+      socket.off(SocketEvents.Disconnect);
+      socket.off(SocketEvents.ConnectError);
+      socket.off(SocketEvents.MessageReceived);
+      socket.off(SocketEvents.UserJoined);
+      socket.off(SocketEvents.UserLeft);
+      socket.off(SocketEvents.UserCount);
+      socket.off(SocketEvents.Message);
     };
   }, [socket]);
 
   const sendTestMessage = () => {
     if (socket && socket.connected) {
-      socket.emit('send_message', { content: testMessage });
+      socket.emit(SocketEvents.SendMessage, { content: testMessage });
       setConnectionLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: 📤 Sent: ${testMessage}`]);
     }
   };

@@ -1,10 +1,12 @@
+import { SocketEvents } from "@/utils/socket";
+
 export interface ChatMessage {
   id: string;
   chat: string;
   userId: number;
   username: string;
   timestamp: string;
-  type: "message" | "system" | "notification";
+  type: SocketEvents;
 }
 
 export interface User {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { ChatMessage } from "./types";
 import { logger } from "@/utils/logger";
 import { roomService } from "@/services/roomService";
+import { SocketEvents } from "@/utils/socket";
 
 interface User {
   id: number;
@@ -10,9 +11,9 @@ interface User {
 
 // Generic socket interface that works with both Socket.IO and our WebSocket wrapper
 interface GenericSocket {
-  on: (event: string, callback: (...args: any[]) => void) => void;
-  off: (event: string, callback?: (...args: any[]) => void) => void;
-  emit: (event: string, ...args: any[]) => void;
+  on: (event: SocketEvents, callback: (...args: any[]) => void) => void;
+  off: (event: SocketEvents, callback?: (...args: any[]) => void) => void;
+  emit: (event: SocketEvents, ...args: any[]) => void;
   connected: boolean;
 }
 
@@ -80,7 +81,7 @@ export const useChatMessages = (
             message.user_name ||
             "Unknown User",
           timestamp: message.timestamp || new Date().toISOString(),
-          type: "message",
+          type: SocketEvents.Message,
         };
 
         logger.info(
@@ -116,7 +117,7 @@ export const useChatMessages = (
           userId: message.userId || 0,
           username: message.username || "Unknown User",
           timestamp: message.timestamp || new Date().toISOString(),
-          type: message.type || "message",
+          type: message.type || SocketEvents.Message,
         };
 
         logger.info("Chat: Fixed message:", fixedMessage);
@@ -151,28 +152,28 @@ export const useChatMessages = (
         userId: 0,
         username: "System",
         timestamp: new Date().toISOString(),
-        type: "system",
+        type: SocketEvents.SystemMessage,
       };
       setMessages((prev) => [...prev, systemMessage]);
     };
 
     // Register event listeners
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("message_received", handleMessageReceived);
-    socket.on("message_history", handleMessageHistory);
-    socket.on("system_message", handleSystemMessage);
+    socket.on(SocketEvents.Connect, handleConnect);
+    socket.on(SocketEvents.Disconnect, handleDisconnect);
+    socket.on(SocketEvents.MessageReceived, handleMessageReceived);
+    socket.on(SocketEvents.MessageHistory, handleMessageHistory);
+    socket.on(SocketEvents.SystemMessage, handleSystemMessage);
 
     // Set initial connection status
     setIsConnected(socket.connected);
 
     // Cleanup
     return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("message_received", handleMessageReceived);
-      socket.off("message_history", handleMessageHistory);
-      socket.off("system_message", handleSystemMessage);
+      socket.off(SocketEvents.Connect, handleConnect);
+      socket.off(SocketEvents.Disconnect, handleDisconnect);
+      socket.off(SocketEvents.MessageReceived, handleMessageReceived);
+      socket.off(SocketEvents.MessageHistory, handleMessageHistory);
+      socket.off(SocketEvents.SystemMessage, handleSystemMessage);
     };
   }, [socket]);
 
@@ -184,14 +185,15 @@ export const useChatMessages = (
       }
 
       const messageData = {
-        chat: content.trim(),
-        timestamp: new Date().toISOString(),
-        userId: user.id,
-        username: user.username,
+        message_type: SocketEvents.SendMessage,
+        data: {
+          chat: content.trim(),
+          timestamp: new Date().toISOString(),
+        },
       };
 
       logger.info("Chat: Sending message:", messageData);
-      socket.emit("send_message", messageData);
+      socket.emit(SocketEvents.SendMessage, messageData);
     },
     [socket, user, isConnected]
   );

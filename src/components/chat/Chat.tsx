@@ -9,6 +9,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { Badge } from '../ui/badge';
+import { SocketEvents } from '@/utils/socket';
 
 interface ChatProps {
   roomId: string;
@@ -43,24 +44,24 @@ export const Chat: React.FC<ChatProps> = ({
     if (!socket) return;
 
     // Listen for user count updates
-    socket.on('user_count', (count: number) => {
+    socket.on(SocketEvents.UserCount, (count: number) => {
       setOnlineUsers(count);
     });
 
     // Listen for user join/leave events
-    socket.on('user_joined', (data: { userId: string; username: string }) => {
+    socket.on(SocketEvents.UserJoined, (data: { userId: string; username: string }) => {
       console.log(`${data.username} joined the room`);
     });
 
-    socket.on('user_left', (data: { userId: string; username: string }) => {
+    socket.on(SocketEvents.UserLeft, (data: { userId: string; username: string }) => {
       console.log(`${data.username} left the room`);
     });
 
     // Cleanup listeners
     return () => {
-      socket.off('user_count');
-      socket.off('user_joined');
-      socket.off('user_left');
+      socket.off(SocketEvents.UserCount);
+      socket.off(SocketEvents.UserJoined);
+      socket.off(SocketEvents.UserLeft);
     };
   }, [socket]);
 

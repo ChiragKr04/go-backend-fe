@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import type { ChatMessage } from './types';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { formatMessageTime } from './utils';
+import { SocketEvents } from '@/utils/socket';
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -23,7 +24,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 }) => {
   const getMessageStyles = () => {
     switch (message.type) {
-      case 'system':
+      case SocketEvents.SystemMessage:
         return 'bg-muted text-muted-foreground text-center text-sm py-2 px-4 rounded-lg mx-8';
       default:
         return isCurrentUser
@@ -41,7 +42,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       .slice(0, 2);
   };
 
-  if (message.type === 'system') {
+  if (message.type === SocketEvents.SystemMessage) {
     return (
       <div className="flex justify-center my-2">
         <div className={getMessageStyles()}>
@@ -56,7 +57,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       {showAvatar && (
         <Avatar className="w-8 h-8 flex-shrink-0">
           <AvatarFallback className="text-xs bg-primary/10 text-primary">
-            {getUserInitials(message.username)}
+            {getUserInitials(message?.username || '')}
           </AvatarFallback>
         </Avatar>
       )}
@@ -64,7 +65,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className={`flex flex-col ${isCurrentUser ? 'items-end' : 'items-start'} max-w-[70%] min-w-0`}>
         <div className="flex items-center gap-2 mb-1">
           <span className={`text-sm font-medium ${isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-            {isCurrentUser ? 'You' : message.username}
+            {isCurrentUser ? 'You' : message?.username || ''}
           </span>
           <span className="text-xs text-muted-foreground">
             {formatMessageTime(message.timestamp || message['createdAt'] || '')}
@@ -72,7 +73,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
 
         <div className={`p-3 break-words shadow-sm ${getMessageStyles()}`}>
-          <p className="text-sm leading-relaxed">{message.chat}</p>
+          <p className="text-sm leading-relaxed">{message?.chat || ''}</p>
         </div>
       </div>
     </div>
@@ -126,16 +127,6 @@ export const MessageList: React.FC<MessageListProps> = ({
         const showAvatar = !prevMessage ||
           prevMessage.userId !== message.userId ||
           prevMessage.type !== message.type;
-
-        // Debug logging
-        console.log(`Message ${index}:`, {
-          messageUserId: message.userId,
-          currentUserId: currentUserId,
-          isCurrentUser: isCurrentUser,
-          username: message.username,
-          content: message.chat.substring(0, 20) + '...'
-        });
-
         return (
           <MessageItem
             key={message.id}

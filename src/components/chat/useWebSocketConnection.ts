@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { logger } from "@/utils/logger";
 import { WS_BASE_URL } from "@/constants/api";
+import { SocketEvents } from "@/utils/socket";
 
 // Create a Socket.IO-like interface for native WebSocket
 interface WebSocketEvents {
@@ -27,7 +28,7 @@ class SocketLikeWebSocket {
       this.setupEventHandlers();
     } catch (error) {
       logger.error("WebSocket connection failed:", error);
-      this.emit("connect_error", error);
+      this.emit(SocketEvents.ConnectError, error);
     }
   }
 
@@ -37,18 +38,18 @@ class SocketLikeWebSocket {
     this.ws.onopen = () => {
       logger.info("✅ WebSocket connected successfully");
       this.reconnectAttempts = 0;
-      this.emit("connect");
+      this.emit(SocketEvents.Connect);
     };
 
     this.ws.onclose = (event) => {
       logger.warn("❌ WebSocket disconnected:", event.reason);
-      this.emit("disconnect", event.reason);
+      this.emit(SocketEvents.Disconnect, event.reason);
       this.attemptReconnect();
     };
 
     this.ws.onerror = (error) => {
       logger.error("🚫 WebSocket error:", error);
-      this.emit("connect_error", error);
+      this.emit(SocketEvents.ConnectError, error);
     };
 
     this.ws.onmessage = (event) => {
@@ -76,9 +77,13 @@ class SocketLikeWebSocket {
               );
 
               // Special handling for send_message type to avoid infinite loop
-              if (data.type === "send_message") {
+              if (data.type === SocketEvents.SendMessage) {
                 logger.info(
-                  "📋 Converting send_message to message_received to avoid loop"
+                  "📋 Converting type",
+                  SocketEvents.SendMessage,
+                  "to",
+                  SocketEvents.MessageReceived,
+                  "to avoid loop"
                 );
                 logger.info(
                   "📋 Original payload:",
@@ -111,57 +116,60 @@ class SocketLikeWebSocket {
                   "📋 Enriched payload:",
                   JSON.stringify(enrichedPayload, null, 2)
                 );
-                this.emit("message_received", enrichedPayload);
+                this.emit(SocketEvents.MessageReceived, enrichedPayload);
               } else {
-                this.emit(data.type, data.payload);
+                this.emit(data.type as SocketEvents, data.payload);
               }
               continue;
             }
 
             // Format 2: Direct message object (common format)
             if (data.id && data.chat && data.userId !== undefined) {
-              logger.info("📋 Handling direct message object");
-              this.emit("message_received", data);
+              logger.info("📋 Handling type", SocketEvents.MessageReceived);
+              this.emit(SocketEvents.MessageReceived, data);
               continue;
             }
 
             // Format 3: Check for specific message types without payload wrapper
             if (
-              data.type === "message_received" ||
-              data.type === "new_message"
+              data.type === SocketEvents.MessageReceived ||
+              data.type === SocketEvents.NewMessage
             ) {
-              logger.info("📋 Handling message_received type");
-              this.emit("message_received", data);
+              logger.info("📋 Handling type", SocketEvents.MessageReceived);
+              this.emit(SocketEvents.MessageReceived, data);
               continue;
             }
 
-            if (data.type === "user_joined") {
-              logger.info("📋 Handling user_joined type");
-              this.emit("user_joined", data);
+            if (data.type === SocketEvents.UserJoined) {
+              logger.info("📋 Handling type", SocketEvents.UserJoined);
+              this.emit(SocketEvents.UserJoined, data);
               continue;
             }
 
-            if (data.type === "user_left") {
-              logger.info("📋 Handling user_left type");
-              this.emit("user_left", data);
+            if (data.type === SocketEvents.UserLeft) {
+              logger.info("📋 Handling type", SocketEvents.UserLeft);
+              this.emit(SocketEvents.UserLeft, data);
               continue;
             }
 
-            if (data.type === "user_count") {
-              logger.info("📋 Handling user_count type");
-              this.emit("user_count", data.count || data.payload || data);
+            if (data.type === SocketEvents.UserCount) {
+              logger.info("📋 Handling type", SocketEvents.UserCount);
+              this.emit(
+                SocketEvents.UserCount,
+                data.count || data.payload || data
+              );
               continue;
             }
 
             // Format 4: Raw message data (fallback)
             logger.info("📋 Handling as generic message - unknown format");
             logger.info("📋 Message structure:", Object.keys(data));
-            this.emit("message", data);
+            this.emit(SocketEvents.Message, data);
 
             // Also try to emit as message_received if it looks like a chat message
             if (data.chat || data.message) {
               logger.info("📋 Also emitting as message_received (fallback)");
-              this.emit("message_received", data);
+              this.emit(SocketEvents.MessageReceived, data);
             }
           } catch (parseError) {
             logger.error("Failed to parse individual message:", parseError);
@@ -171,7 +179,7 @@ class SocketLikeWebSocket {
       } catch (error) {
         logger.error("Failed to process WebSocket message:", error);
         logger.info("Raw message data:", event.data);
-        this.emit("message", event.data);
+        this.emit(SocketEvents.Message, event.data);
       }
     };
   }
@@ -188,24 +196,36 @@ class SocketLikeWebSocket {
       }, this.reconnectDelay * this.reconnectAttempts);
     } else {
       logger.error("💥 Max reconnection attempts reached");
-      this.emit("reconnect_failed");
+      this.emit(SocketEvents.ReconnectFailed);
     }
   }
 
-  emit(eventName: string, ...args: any[]) {
-    if (
-      eventName === "send_message" ||
-      eventName === "join_room" ||
-      eventName === "leave_room"
-    ) {
-      // Send to server
+  emit(eventName: SocketEvents, ...args: any[]) {
+    // Define which events should be sent to server vs handled locally only
+    const serverEvents = new Set([
+      SocketEvents.SendMessage,
+      SocketEvents.JoinRoom,
+      SocketEvents.LeaveRoom,
+      SocketEvents.Authenticate,
+    ]);
+
+    // Always trigger local event handlers first
+    if (this.events[eventName]) {
+      this.events[eventName](...args);
+    }
+
+    // Only send certain events to server (outgoing events)
+    if (serverEvents.has(eventName)) {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         const message = {
           type: eventName,
-          payload: args[0],
+          chat_data:
+            args?.length > 0
+              ? {
+                  ...args[0]?.data,
+                }
+              : {},
           timestamp: new Date().toISOString(),
-          userId: args[0].userId,
-          username: args[0].username,
         };
         this.ws.send(JSON.stringify(message));
         logger.info("📤 Sent message to server:", message);
@@ -213,10 +233,8 @@ class SocketLikeWebSocket {
         logger.warn("Cannot send message - WebSocket not connected");
       }
     } else {
-      // Emit to local listeners
-      if (this.events[eventName]) {
-        this.events[eventName](...args);
-      }
+      // Log that this is a local-only event
+      logger.info("📋 Local event triggered:", eventName);
     }
   }
 
@@ -273,19 +291,19 @@ export const useWebSocketConnection = (
     const newSocket = new SocketLikeWebSocket(wsUrl);
 
     // Handle authentication and room joining after connection
-    newSocket.on("connect", () => {
+    newSocket.on(SocketEvents.Connect, () => {
       logger.info(
         "✅ WebSocket connected, sending authentication and joining room"
       );
 
       // Send authentication message
-      newSocket.emit("authenticate", {
+      newSocket.emit(SocketEvents.Authenticate, {
         token: token,
         roomId: roomId,
       });
 
       // Join the room
-      newSocket.emit("join_room", { roomId });
+      newSocket.emit(SocketEvents.JoinRoom, { roomId });
     });
 
     newSocket.connect();
@@ -298,7 +316,7 @@ export const useWebSocketConnection = (
     return () => {
       logger.info("🧹 Cleaning up WebSocket connection");
       if (socketRef.current) {
-        socketRef.current.emit("leave_room", { roomId });
+        socketRef.current.emit(SocketEvents.LeaveRoom, { roomId });
         socketRef.current.disconnect();
         socketRef.current = null;
       }
