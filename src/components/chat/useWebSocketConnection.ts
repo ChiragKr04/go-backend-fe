@@ -163,8 +163,11 @@ export class SocketLikeWebSocket {
                 data.count ||
                 data.payload?.roomUsersCount ||
                 0;
-              logger.info("📋 Extracted user count:", userCount);
-              this.emit(SocketEvents.UserCount, userCount);
+              logger.info("📋 Extracted user count:", userCount, data);
+              this.emit(SocketEvents.UserCount, {
+                userCount,
+                users: data.data?.roomUsersData || [],
+              });
               continue;
             }
 

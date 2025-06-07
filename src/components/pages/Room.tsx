@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Users, Clock, Hash, User } from "lucide-react";
+import { ArrowLeft, Users, Hash, User } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import type { Room } from "../../types/room";
 import { Badge } from "../ui/badge";
@@ -11,6 +11,8 @@ import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
 import { ROUTES } from "@/routes";
 import { Chat, useWebSocketConnection } from "../chat";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { generateRandomVibrantColor } from "../../utils/helper-functions";
 // import { WebSocketDebugger } from "../chat/WebSocketDebugger";
 
 const enum CopyFeedbackType {
@@ -28,7 +30,7 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [copyFeedback2, setCopyFeedback2] = useState<string | null>(null);
-  const [onlineUsers, setOnlineUsers] = useState<number>(0);
+  const [onlineUsers, setOnlineUsers] = useState<{ userCount: number, users: any[] }>({ userCount: 0, users: [] });
 
   const webSocketConnection = useWebSocketConnection(params.roomId!, token);
 
@@ -88,10 +90,6 @@ const RoomPage = () => {
     logger.info("Room page useEffect triggered");
     loadRoomData();
   }, [location.state, params.roomId]);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
 
   const copyRoomCode = async (copyFeedbackType: CopyFeedbackType) => {
     if (!room?.short_room_id) return;
@@ -226,10 +224,10 @@ const RoomPage = () => {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {/* Room Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <Hash className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">Room ID</p>
@@ -237,17 +235,7 @@ const RoomPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
-                  <Clock className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-medium">Created</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDate(room?.created_at || '')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                   <User className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">Created By</p>
@@ -257,11 +245,29 @@ const RoomPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between gap-3 p-3 bg-muted/50 rounded-lg">
                   <Users className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">Participants</p>
-                    <p className="text-xs text-muted-foreground">{onlineUsers} online</p>
+                    <p className="text-xs text-muted-foreground">{onlineUsers.userCount} online</p>
+                  </div>
+                  <div className="flex items-center -space-x-3">
+                    {onlineUsers.users.slice(0, 4).map((user, index) => (
+                      <Avatar key={user.userId} className="w-10 h-10 border-2 border-background  relative z-10" style={{ zIndex: onlineUsers.users.length - index }}>
+                        <AvatarImage src={user.avatar} />
+                        <AvatarFallback
+                          className="text-sm font-bold text-black"
+                          style={{ backgroundColor: generateRandomVibrantColor() }}
+                        >
+                          {user.username?.charAt(0)?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {onlineUsers.users.length > 4 && (
+                      <div className="w-10 h-10 bg-muted border-2 border-background rounded-full flex items-center justify-center text-sm font-medium relative z-0">
+                        +{onlineUsers.users.length - 4}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -292,7 +298,9 @@ const RoomPage = () => {
           {/* <WebSocketDebugger roomId={params.roomId!} /> */}
 
           {/* Chat Component */}
-          <Chat roomId={params.roomId!} className="w-full" webSocketConnection={webSocketConnection} changeUserCount={setOnlineUsers} />
+          <Chat roomId={params.roomId!} className="w-full" webSocketConnection={webSocketConnection} changeUserCount={(data) => {
+            setOnlineUsers(data);
+          }} />
         </div>
       </main>
     </div>

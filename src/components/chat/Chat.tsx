@@ -16,7 +16,7 @@ interface ChatProps {
   className?: string;
   webSocketConnection: SocketLikeWebSocket | null;
   useNativeWebSocket?: boolean; // Option to switch between Socket.IO and native WebSocket
-  changeUserCount: (count: number) => void;
+  changeUserCount: (data: { userCount: number, users: any[] }) => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({
@@ -46,9 +46,9 @@ export const Chat: React.FC<ChatProps> = ({
     if (!socket) return;
 
     // Listen for user count updates
-    socket.on(SocketEvents.UserCount, (count: number) => {
-      setOnlineUsers(count);
-      changeUserCount(count);
+    socket.on(SocketEvents.UserCount, (data: { userCount: number, users: any[] }) => {
+      setOnlineUsers(data?.userCount);
+      changeUserCount(data);
     });
 
     // Listen for user join/leave events
