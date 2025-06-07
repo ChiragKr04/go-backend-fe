@@ -30,7 +30,7 @@ const JoinRoomModal = ({ isOpen, onClose, onJoin, isLoading = false }: JoinRoomM
 	}
 
 	const handleRoomCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value.toUpperCase()
+		const value = e.target.value
 		setRoomCode(value)
 
 		// Clear error when user starts typing
@@ -47,12 +47,12 @@ const JoinRoomModal = ({ isOpen, onClose, onJoin, isLoading = false }: JoinRoomM
 			return
 		}
 
-		if (!validateRoomCode(roomCode)) {
+		if (!validateRoomCode(roomCode.toUpperCase())) {
 			setError("Room code must be 3-10 characters (letters and numbers)")
 			return
 		}
 
-		onJoin(roomCode.trim())
+		onJoin(roomCode.trim().toUpperCase())
 	}
 
 	const handleClose = () => {
@@ -88,7 +88,7 @@ const JoinRoomModal = ({ isOpen, onClose, onJoin, isLoading = false }: JoinRoomM
 							placeholder="Enter room code (e.g., GMB018)"
 							value={roomCode}
 							onChange={handleRoomCodeChange}
-							className={`text-center text-lg font-mono tracking-wider ${error ? 'border-destructive focus:border-destructive' : ''
+							className={`text-center text-lg font-mono tracking-wider uppercase ${error ? 'border-destructive focus:border-destructive' : ''
 								}`}
 							maxLength={10}
 							autoComplete="off"
