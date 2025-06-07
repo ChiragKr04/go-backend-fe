@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { logger } from "@/utils/logger";
 import { WS_BASE_URL } from "@/constants/api";
 import { SocketEvents } from "@/utils/socket";
+import type { User } from "@/types/auth";
+import { useAuth } from "@/hooks/useAuth";
 
 // Create a Socket.IO-like interface for native WebSocket
 interface WebSocketEvents {
@@ -9,6 +11,7 @@ interface WebSocketEvents {
 }
 
 export class SocketLikeWebSocket {
+  private user: User | null;
   private ws: WebSocket | null = null;
   private events: WebSocketEvents = {};
   private reconnectAttempts = 0;
@@ -17,9 +20,10 @@ export class SocketLikeWebSocket {
   private url: string;
   private protocols?: string | string[];
 
-  constructor(url: string, protocols?: string | string[]) {
+  constructor(user: User | null, url: string, protocols?: string | string[]) {
     this.url = url;
     this.protocols = protocols;
+    this.user = user;
   }
 
   connect() {
@@ -141,22 +145,26 @@ export class SocketLikeWebSocket {
 
             if (data.type === SocketEvents.UserJoined) {
               logger.info("📋 Handling type", SocketEvents.UserJoined);
-              this.emit(SocketEvents.UserJoined, data);
+              // this.emit(SocketEvents.UserJoined, data);
               continue;
             }
 
             if (data.type === SocketEvents.UserLeft) {
               logger.info("📋 Handling type", SocketEvents.UserLeft);
-              this.emit(SocketEvents.UserLeft, data);
+              // this.emit(SocketEvents.UserLeft, data);
               continue;
             }
 
             if (data.type === SocketEvents.UserCount) {
               logger.info("📋 Handling type", SocketEvents.UserCount);
-              this.emit(
-                SocketEvents.UserCount,
-                data.count || data.payload || data
-              );
+              // Extract the actual count from the nested data structure
+              const userCount =
+                data.data?.roomUsersCount ||
+                data.count ||
+                data.payload?.roomUsersCount ||
+                0;
+              logger.info("📋 Extracted user count:", userCount);
+              this.emit(SocketEvents.UserCount, userCount);
               continue;
             }
 
@@ -218,14 +226,12 @@ export class SocketLikeWebSocket {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         const message = {
           type: eventName,
-          chat_data:
-            args?.length > 0
-              ? {
-                  ...args[0]?.data,
-                }
-              : {},
+          userId: this.user?.id || 0,
+          username: this.user?.username || "",
+          data: args?.length > 0 ? args[0]?.data : {},
           timestamp: new Date().toISOString(),
         };
+        logger.info("📤 Sending message:", message);
         this.ws.send(JSON.stringify(message));
       } else {
         logger.warn("Cannot send message - WebSocket not connected");
@@ -281,6 +287,7 @@ export const useWebSocketConnection = (
 ) => {
   const [socket, setSocket] = useState<SocketLikeWebSocket | null>(null);
   const socketRef = useRef<SocketLikeWebSocket | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     // Don't connect if we don't have a token or roomId
@@ -300,7 +307,7 @@ export const useWebSocketConnection = (
     const wsUrl = `${WS_BASE_URL}/${roomId}?token=${encodeURIComponent(token)}`;
     logger.info("Connecting to WebSocket:", wsUrl);
 
-    const newSocket = new SocketLikeWebSocket(wsUrl);
+    const newSocket = new SocketLikeWebSocket(user, wsUrl);
 
     // Handle authentication and room joining after connection
     logger.info("🔧 Registering Connect event handler...");

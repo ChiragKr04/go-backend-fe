@@ -28,6 +28,7 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [copyFeedback2, setCopyFeedback2] = useState<string | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<number>(0);
 
   const webSocketConnection = useWebSocketConnection(params.roomId!, token);
 
@@ -260,7 +261,7 @@ const RoomPage = () => {
                   <Users className="w-5 h-5 text-primary" />
                   <div>
                     <p className="text-sm font-medium">Participants</p>
-                    <p className="text-xs text-muted-foreground">1 online</p>
+                    <p className="text-xs text-muted-foreground">{onlineUsers} online</p>
                   </div>
                 </div>
               </div>
@@ -291,7 +292,7 @@ const RoomPage = () => {
           {/* <WebSocketDebugger roomId={params.roomId!} /> */}
 
           {/* Chat Component */}
-          <Chat roomId={params.roomId!} className="w-full" webSocketConnection={webSocketConnection} />
+          <Chat roomId={params.roomId!} className="w-full" webSocketConnection={webSocketConnection} changeUserCount={setOnlineUsers} />
         </div>
       </main>
     </div>

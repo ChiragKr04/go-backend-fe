@@ -16,15 +16,17 @@ interface ChatProps {
   className?: string;
   webSocketConnection: SocketLikeWebSocket | null;
   useNativeWebSocket?: boolean; // Option to switch between Socket.IO and native WebSocket
+  changeUserCount: (count: number) => void;
 }
 
 export const Chat: React.FC<ChatProps> = ({
   roomId,
   className = '',
   webSocketConnection,
-  useNativeWebSocket = true // Default to native WebSocket since your backend uses raw WebSocket
+  useNativeWebSocket = true, // Default to native WebSocket since your backend uses raw WebSocket,
+  changeUserCount
 }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<number>(0);
 
   // Choose connection type based on prop
@@ -46,6 +48,7 @@ export const Chat: React.FC<ChatProps> = ({
     // Listen for user count updates
     socket.on(SocketEvents.UserCount, (count: number) => {
       setOnlineUsers(count);
+      changeUserCount(count);
     });
 
     // Listen for user join/leave events
