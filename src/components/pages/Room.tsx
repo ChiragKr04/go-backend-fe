@@ -10,7 +10,7 @@ import { Badge } from "../ui/badge";
 import { logger } from "../../utils/logger";
 import { roomService } from "../../services/roomService";
 import { ROUTES } from "@/routes";
-import { Chat } from "../chat";
+import { Chat, useWebSocketConnection } from "../chat";
 // import { WebSocketDebugger } from "../chat/WebSocketDebugger";
 
 const enum CopyFeedbackType {
@@ -22,12 +22,14 @@ const RoomPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams<{ roomId: string }>();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [room, setRoom] = useState<Room | null>(null);
   const [_, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [copyFeedback2, setCopyFeedback2] = useState<string | null>(null);
+
+  const webSocketConnection = useWebSocketConnection(params.roomId!, token);
 
   // Debug component mount
   useEffect(() => {
@@ -289,7 +291,7 @@ const RoomPage = () => {
           {/* <WebSocketDebugger roomId={params.roomId!} /> */}
 
           {/* Chat Component */}
-          <Chat roomId={params.roomId!} className="w-full" />
+          <Chat roomId={params.roomId!} className="w-full" webSocketConnection={webSocketConnection} />
         </div>
       </main>
     </div>

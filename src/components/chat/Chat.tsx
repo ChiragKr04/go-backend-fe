@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { MessageCircle, Users, Wifi, WifiOff } from 'lucide-react';
 // import { useSocketConnection } from './useSocketConnection';
-import { useWebSocketConnection } from './useWebSocketConnection';
+import { SocketLikeWebSocket } from './useWebSocketConnection';
 import { useChatMessages } from './useChatMessages';
 import { ScrollArea } from '../ui/scroll-area';
 import { MessageList } from './MessageList';
@@ -14,12 +14,14 @@ import { SocketEvents } from '@/utils/socket';
 interface ChatProps {
   roomId: string;
   className?: string;
+  webSocketConnection: SocketLikeWebSocket | null;
   useNativeWebSocket?: boolean; // Option to switch between Socket.IO and native WebSocket
 }
 
 export const Chat: React.FC<ChatProps> = ({
   roomId,
   className = '',
+  webSocketConnection,
   useNativeWebSocket = true // Default to native WebSocket since your backend uses raw WebSocket
 }) => {
   const { user, token } = useAuth();
@@ -27,8 +29,6 @@ export const Chat: React.FC<ChatProps> = ({
 
   // Choose connection type based on prop
   // const socketIOConnection = useSocketConnection(roomId, token);
-  const webSocketConnection = useWebSocketConnection(roomId, token);
-
   // Use the appropriate connection
   const socket = webSocketConnection;
   const { messages, sendMessage, isConnected, loadMessageHistory } = useChatMessages(socket, user);

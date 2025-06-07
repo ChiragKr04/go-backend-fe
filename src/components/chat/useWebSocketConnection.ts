@@ -8,7 +8,7 @@ interface WebSocketEvents {
   [key: string]: ((...args: any[]) => void)[];
 }
 
-class SocketLikeWebSocket {
+export class SocketLikeWebSocket {
   private ws: WebSocket | null = null;
   private events: WebSocketEvents = {};
   private reconnectAttempts = 0;
